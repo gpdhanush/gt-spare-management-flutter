@@ -20,17 +20,32 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      // Navigator.pushReplacementNamed(context, AppRoute.home);
+      Navigator.pushReplacementNamed(context, AppRoute.home);
 
-      final account = await AuthService.instance.signIn();
-      if (account != null && mounted) {
-        // Navigate to home page after successful login
-        Navigator.pushReplacementNamed(context, AppRoute.home);
-      }
+      // final account = await AuthService.instance.signIn();
+      // if (account != null && mounted) {
+      //   // Navigate to home page after successful login
+      //   Navigator.pushReplacementNamed(context, AppRoute.home);
+      // }
     } catch (e) {
       if (mounted) {
+        String errorMessage = 'Sign in failed';
+        if (e.toString().contains('PlatformException') &&
+            e.toString().contains('10')) {
+          errorMessage =
+              'Configuration Error (10):\n'
+              '• Check OAuth client ID in Google Cloud Console\n'
+              '• Add SHA-1 fingerprint to Firebase/Google Cloud Console\n'
+              '• Verify package name: com.gt.spare_management';
+        } else {
+          errorMessage = 'Sign in failed: ${e.toString()}';
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sign in failed: ${e.toString()}')),
+          SnackBar(
+            content: Text(errorMessage),
+            duration: const Duration(seconds: 5),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {

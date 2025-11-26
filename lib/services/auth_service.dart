@@ -31,8 +31,23 @@ class AuthService {
       return null;
     } catch (error) {
       EasyLoading.dismiss();
-      EasyLoading.showError('Sign in failed: ${error.toString()}');
-      return null;
+      // Provide more detailed error information
+      String errorMessage = 'Sign in failed';
+      if (error.toString().contains('PlatformException')) {
+        if (error.toString().contains('10')) {
+          errorMessage =
+              'Sign in failed: Configuration error (10). Please ensure:\n'
+              '1. OAuth client ID is configured in Google Cloud Console\n'
+              '2. SHA-1 certificate fingerprint is added to Firebase/Google Cloud Console\n'
+              '3. Package name matches: com.gt.spare_management';
+        } else {
+          errorMessage = 'Sign in failed: ${error.toString()}';
+        }
+      } else {
+        errorMessage = 'Sign in failed: ${error.toString()}';
+      }
+      EasyLoading.showError(errorMessage);
+      rethrow; // Re-throw to allow login page to handle it
     }
   }
 
