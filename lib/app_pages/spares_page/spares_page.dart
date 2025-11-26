@@ -20,13 +20,42 @@ class SparesPage extends StatefulWidget {
 
 class _SparesPageState extends State<SparesPage> {
   final DataService _dataService = DataService();
+  final TextEditingController _searchController = TextEditingController();
   List<Spare> _spares = [];
+  List<Spare> _filteredSpares = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadSpares();
+    _searchController.addListener(_filterSpares);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterSpares() {
+    final query = _searchController.text.toLowerCase().trim();
+    if (query.isEmpty) {
+      setState(() {
+        _filteredSpares = _spares;
+      });
+    } else {
+      setState(() {
+        _filteredSpares = _spares.where((spare) {
+          return spare.materialName.toLowerCase().contains(query) ||
+              spare.serialNo.toLowerCase().contains(query) ||
+              spare.materialCode.toLowerCase().contains(query) ||
+              spare.partNo.toLowerCase().contains(query) ||
+              (spare.description != null &&
+                  spare.description!.toLowerCase().contains(query));
+        }).toList();
+      });
+    }
   }
 
   Future<void> _loadSpares() async {
@@ -35,6 +64,7 @@ class _SparesPageState extends State<SparesPage> {
       final spares = await _dataService.getSparesByUnit(widget.unit.id);
       setState(() {
         _spares = spares;
+        _filteredSpares = spares;
         _isLoading = false;
       });
     } catch (e) {
@@ -196,6 +226,7 @@ class _SparesPageState extends State<SparesPage> {
                 if (context.mounted) {
                   Navigator.pop(context);
                   _loadSpares();
+                  _filterSpares();
                 }
               }
             },
@@ -241,6 +272,7 @@ class _SparesPageState extends State<SparesPage> {
               if (context.mounted) {
                 Navigator.pop(context);
                 _loadSpares();
+                _filterSpares();
               }
             },
             style: ElevatedButton.styleFrom(
@@ -319,10 +351,62 @@ class _SparesPageState extends State<SparesPage> {
               ],
             ),
           ),
+          // Search Bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            color: AppColors.white,
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _searchController,
+              builder: (context, value, child) {
+                return TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search by name, serial, code, part number...',
+                    hintStyle: TextStyle(
+                      color: AppColors.fontgrey.withOpacity(0.6),
+                    ),
+                    prefixIcon: Icon(Icons.search, color: AppColors.primary),
+                    suffixIcon: value.text.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(Icons.clear, color: AppColors.fontgrey),
+                            onPressed: () {
+                              _searchController.clear();
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: AppColors.gray,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.grayDark,
+                        width: 1,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.primary,
+                        width: 2,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : _spares.isEmpty
+                : _filteredSpares.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -334,7 +418,9 @@ class _SparesPageState extends State<SparesPage> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'No spares found',
+                          _searchController.text.isNotEmpty
+                              ? 'No spares found matching your search'
+                              : 'No spares found',
                           style: AppTextStyles.bodyText.copyWith(
                             color: AppColors.fontgrey,
                             fontSize: 16,
@@ -342,7 +428,9 @@ class _SparesPageState extends State<SparesPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Tap the + button to add a new spare part',
+                          _searchController.text.isNotEmpty
+                              ? 'Try a different search term'
+                              : 'Tap the + button to add a new spare part',
                           style: AppTextStyles.bodyText.copyWith(
                             color: AppColors.fontgrey,
                             fontSize: 14,
@@ -353,9 +441,9 @@ class _SparesPageState extends State<SparesPage> {
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.all(20),
-                    itemCount: _spares.length,
+                    itemCount: _filteredSpares.length,
                     itemBuilder: (context, index) {
-                      final spare = _spares[index];
+                      final spare = _filteredSpares[index];
                       return Container(
                         margin: const EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
@@ -517,27 +605,6 @@ class _SparesPageState extends State<SparesPage> {
                       );
                     },
                   ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: Text(
-              '© 2025 GT Spare Management. v1.0.0',
-              style: AppTextStyles.bodyText.copyWith(
-                color: AppColors.fontgrey,
-                fontSize: 12,
-              ),
-              textAlign: TextAlign.center,
-            ),
           ),
         ],
       ),

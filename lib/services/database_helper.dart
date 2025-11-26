@@ -339,4 +339,16 @@ class DatabaseHelper {
     if (maps.isEmpty) return null;
     return Unit.fromMap(maps.first);
   }
+
+  Future<void> closeDatabase() async {
+    if (_database != null) {
+      await _database!.close();
+      _database = null;
+    }
+  }
+
+  Future<String> getDatabasePath() async {
+    final dbPath = await getDatabasesPath();
+    return join(dbPath, 'spare_management.db');
+  }
 }

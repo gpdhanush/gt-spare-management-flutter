@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:spare_management/app_configs/app_constants.dart';
+import 'package:spare_management/app_configs/app_routes.dart';
 import 'package:spare_management/app_themes/app_colors.dart';
-import 'package:spare_management/app_utils/app_button_widget.dart';
+import 'package:spare_management/services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -11,30 +12,33 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
+  bool _isLoading = false;
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  void _togglePasswordVisibility() {
+  Future<void> _handleGoogleSignIn() async {
     setState(() {
-      _obscurePassword = !_obscurePassword;
+      _isLoading = true;
     });
-  }
 
-  void _handleLogin() {
-    if (_formKey.currentState!.validate()) {
-      // Handle login logic here
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login functionality to be implemented')),
-      );
+    try {
+      // Navigator.pushReplacementNamed(context, AppRoute.home);
+
+      final account = await AuthService.instance.signIn();
+      if (account != null && mounted) {
+        // Navigate to home page after successful login
+        Navigator.pushReplacementNamed(context, AppRoute.home);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sign in failed: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -45,182 +49,80 @@ class _LoginPageState extends State<LoginPage> {
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Image.asset(AppConstants.appLogo, height: 200, width: 200),
-                  const Text(
-                    AppConstants.appName,
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.text,
-                    ),
-                    textAlign: TextAlign.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Image.asset(AppConstants.appLogo, height: 200, width: 200),
+                const Text(
+                  AppConstants.appName,
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.text,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Sign in to continue',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppColors.text.withOpacity(0.6),
-                    ),
-                    textAlign: TextAlign.center,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Sign in with Google to continue',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppColors.text.withOpacity(0.6),
                   ),
-                  const SizedBox(height: 48),
-                  // Email Field
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      labelText: 'Email ID',
-                      hintText: 'Enter your email',
-                      prefixIcon: const Icon(
-                        Icons.email_outlined,
-                        color: AppColors.primary,
-                      ),
-                      labelStyle: const TextStyle(color: AppColors.primary),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: AppColors.grayDark,
-                          width: 1.5,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: AppColors.primary,
-                          width: 2,
-                        ),
-                      ),
-                      filled: true,
-                      fillColor: AppColors.gray,
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  // Password Field
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      hintText: 'Enter your password',
-                      prefixIcon: const Icon(
-                        Icons.lock_outlined,
-                        color: AppColors.primary,
-                      ),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                          color: AppColors.primary,
-                        ),
-                        onPressed: _togglePasswordVisibility,
-                      ),
-                      labelStyle: const TextStyle(color: AppColors.primary),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: AppColors.grayDark,
-                          width: 1.5,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: AppColors.primary,
-                          width: 2,
-                        ),
-                      ),
-                      filled: true,
-                      fillColor: AppColors.gray,
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 32),
-                  // Login Button
-                  AppButton(title: 'Login', onPressed: _handleLogin),
-                  // ElevatedButton(
-                  //   onPressed: _handleLogin,
-                  //   style: ElevatedButton.styleFrom(
-                  //     backgroundColor: AppColors.primary,
-                  //     foregroundColor: AppColors.white,
-                  //     padding: const EdgeInsets.symmetric(vertical: 16),
-                  //     shape: RoundedRectangleBorder(
-                  //       borderRadius: BorderRadius.circular(12),
-                  //     ),
-                  //   ),
-                  //   child: const Text(
-                  //     'Login',
-                  //     style: TextStyle(
-                  //       fontSize: 18,
-                  //       fontWeight: FontWeight.w600,
-                  //     ),
-                  //   ),
-                  // ),
-                  const SizedBox(height: 24),
-                  // Register Link
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Don't have an account? ",
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: AppColors.text.withOpacity(0.6),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          // Handle navigation to register page
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Register page to be implemented'),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 48),
+                // Google Sign-In Button
+                ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _handleGoogleSignIn,
+                  icon: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
                             ),
-                          );
-                        },
-                        child: const Text(
-                          'Register now',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.primary,
                           ),
+                        )
+                      : Image.asset(
+                          'assets/img/google_logo.png',
+                          height: 24,
+                          width: 24,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(Icons.login, size: 24);
+                          },
                         ),
-                      ),
-                    ],
+                  label: Text(
+                    _isLoading ? 'Signing in...' : 'Sign in with Google',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                  const SizedBox(height: 24),
-                ],
-              ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black87,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: AppColors.grayDark, width: 1.5),
+                    ),
+                    elevation: 2,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'By signing in, you agree to sync your data with Google Drive',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.text.withOpacity(0.5),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
         ),

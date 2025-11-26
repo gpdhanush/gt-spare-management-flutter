@@ -18,13 +18,39 @@ class UnitsPage extends StatefulWidget {
 
 class _UnitsPageState extends State<UnitsPage> {
   final DataService _dataService = DataService();
+  final TextEditingController _searchController = TextEditingController();
   List<Unit> _units = [];
+  List<Unit> _filteredUnits = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadUnits();
+    _searchController.addListener(_filterUnits);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _filterUnits() {
+    final query = _searchController.text.toLowerCase().trim();
+    if (query.isEmpty) {
+      setState(() {
+        _filteredUnits = _units;
+      });
+    } else {
+      setState(() {
+        _filteredUnits = _units.where((unit) {
+          return unit.name.toLowerCase().contains(query) ||
+              (unit.description != null &&
+                  unit.description!.toLowerCase().contains(query));
+        }).toList();
+      });
+    }
   }
 
   Future<void> _loadUnits() async {
@@ -33,6 +59,7 @@ class _UnitsPageState extends State<UnitsPage> {
       final units = await _dataService.getUnitsByMachine(widget.machine.id);
       setState(() {
         _units = units;
+        _filteredUnits = units;
         _isLoading = false;
       });
     } catch (e) {
@@ -128,6 +155,7 @@ class _UnitsPageState extends State<UnitsPage> {
                 if (context.mounted) {
                   Navigator.pop(context);
                   _loadUnits();
+                  _filterUnits();
                 }
               }
             },
@@ -173,6 +201,7 @@ class _UnitsPageState extends State<UnitsPage> {
               if (context.mounted) {
                 Navigator.pop(context);
                 _loadUnits();
+                _filterUnits();
               }
             },
             style: ElevatedButton.styleFrom(
@@ -263,10 +292,62 @@ class _UnitsPageState extends State<UnitsPage> {
               ],
             ),
           ),
+          // Search Bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            color: AppColors.white,
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _searchController,
+              builder: (context, value, child) {
+                return TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search by name or description...',
+                    hintStyle: TextStyle(
+                      color: AppColors.fontgrey.withOpacity(0.6),
+                    ),
+                    prefixIcon: Icon(Icons.search, color: AppColors.primary),
+                    suffixIcon: value.text.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(Icons.clear, color: AppColors.fontgrey),
+                            onPressed: () {
+                              _searchController.clear();
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: AppColors.gray,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.grayDark,
+                        width: 1,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: AppColors.primary,
+                        width: 2,
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : _units.isEmpty
+                : _filteredUnits.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -278,7 +359,9 @@ class _UnitsPageState extends State<UnitsPage> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'No units found',
+                          _searchController.text.isNotEmpty
+                              ? 'No units found matching your search'
+                              : 'No units found',
                           style: AppTextStyles.bodyText.copyWith(
                             color: AppColors.fontgrey,
                             fontSize: 16,
@@ -286,7 +369,9 @@ class _UnitsPageState extends State<UnitsPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Tap the + button to add a new unit',
+                          _searchController.text.isNotEmpty
+                              ? 'Try a different search term'
+                              : 'Tap the + button to add a new unit',
                           style: AppTextStyles.bodyText.copyWith(
                             color: AppColors.fontgrey,
                             fontSize: 14,
@@ -297,9 +382,9 @@ class _UnitsPageState extends State<UnitsPage> {
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.all(20),
-                    itemCount: _units.length,
+                    itemCount: _filteredUnits.length,
                     itemBuilder: (context, index) {
-                      final unit = _units[index];
+                      final unit = _filteredUnits[index];
                       return Container(
                         margin: const EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
@@ -409,27 +494,6 @@ class _UnitsPageState extends State<UnitsPage> {
                       );
                     },
                   ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            decoration: BoxDecoration(
-              color: AppColors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: Text(
-              '© 2025 GT Spare Management. v1.0.0',
-              style: AppTextStyles.bodyText.copyWith(
-                color: AppColors.fontgrey,
-                fontSize: 12,
-              ),
-              textAlign: TextAlign.center,
-            ),
           ),
         ],
       ),
