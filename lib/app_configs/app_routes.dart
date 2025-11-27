@@ -8,10 +8,14 @@ class AppRoute {
   static const String splash = "splash";
   static const String login = "login";
   static const String home = "home";
+  static const String dashboard = "dashboard";
   static const String machines = "machines";
   static const String units = "units";
   static const String spares = "spares";
   static const String spareDetails = "spare_details";
+  static const String allUnits = "all_units";
+  static const String allSpares = "all_spares";
+  static const String globalSearch = "global_search";
 
   static Route<dynamic> allRoutes(RouteSettings settings) {
     return MaterialPageRoute(
@@ -23,6 +27,8 @@ class AppRoute {
             return const LoginPage();
           case home:
             return const HomePage();
+          case dashboard:
+            return const DashboardPage();
           case machines:
             return const MachinesPage();
           case units:
@@ -53,6 +59,12 @@ class AppRoute {
               );
             }
             return const MachinesPage();
+          case allUnits:
+            return const AllUnitsPage();
+          case allSpares:
+            return const AllSparesPage();
+          case globalSearch:
+            return const GlobalSearchPage();
           default:
             return const SplashScreen();
         }

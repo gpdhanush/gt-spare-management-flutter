@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:spare_management/app_configs/app_constants.dart';
 import 'package:spare_management/app_configs/app_routes.dart';
-import 'package:spare_management/services/data_service.dart';
-import 'package:spare_management/services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -19,32 +17,8 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initializeApp() async {
-    try {
-      // Initialize database - will create if doesn't exist
-      await DataService().initialize();
-
-      // Check authentication state
-      await AuthService.instance.signInSilently();
-
-      // Wait for minimum splash duration
-      await Future.delayed(const Duration(seconds: 2));
-
-      if (mounted) {
-        // Navigate based on authentication state
-        if (AuthService.instance.isSignedIn) {
-          // User is logged in, redirect directly to Machines page
-          Navigator.pushReplacementNamed(context, AppRoute.machines);
-        } else {
-          // User is not logged in, redirect to Login page
-          Navigator.pushReplacementNamed(context, AppRoute.login);
-        }
-      }
-    } catch (e) {
-      debugPrint("Error initializing app: $e");
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, AppRoute.login);
-      }
-    }
+    await Future.delayed(const Duration(seconds: 2));
+    Navigator.pushReplacementNamed(context, AppRoute.login);
   }
 
   @override

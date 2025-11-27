@@ -17,7 +17,11 @@ class AppBarWidget extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       title: Text(
         title,
-        style: AppTextStyles.bodyText.copyWith(color: Colors.white),
+        style: AppTextStyles.bodyText.copyWith(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       backgroundColor: AppColors.primary,
       automaticallyImplyLeading: true,

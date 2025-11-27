@@ -6,6 +6,7 @@ class Spare {
   final String materialName;
   final String partNo;
   final String? description;
+  final int? quantity;
   final String? createdAt;
   final String? updatedAt;
 
@@ -17,6 +18,7 @@ class Spare {
     required this.materialName,
     required this.partNo,
     this.description,
+    this.quantity,
     this.createdAt,
     this.updatedAt,
   });
@@ -30,6 +32,7 @@ class Spare {
       'material_name': materialName,
       'part_no': partNo,
       'description': description ?? '',
+      'quantity': quantity,
       'created_at': createdAt,
       'updated_at': updatedAt,
     };
@@ -44,6 +47,11 @@ class Spare {
       materialName: map['material_name'] as String,
       partNo: map['part_no'] as String,
       description: map['description'] as String?,
+      quantity: map['quantity'] != null
+          ? (map['quantity'] is int
+                ? map['quantity'] as int
+                : int.tryParse(map['quantity'].toString()))
+          : null,
       createdAt: map['created_at'] as String?,
       updatedAt: map['updated_at'] as String?,
     );
@@ -57,6 +65,7 @@ class Spare {
     String? materialName,
     String? partNo,
     String? description,
+    int? quantity,
     String? createdAt,
     String? updatedAt,
   }) {
@@ -68,6 +77,7 @@ class Spare {
       materialName: materialName ?? this.materialName,
       partNo: partNo ?? this.partNo,
       description: description ?? this.description,
+      quantity: quantity ?? this.quantity,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

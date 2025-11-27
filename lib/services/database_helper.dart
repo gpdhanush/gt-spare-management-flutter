@@ -20,7 +20,12 @@ class DatabaseHelper {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, filePath);
 
-    return await openDatabase(path, version: 1, onCreate: _createDB);
+    return await openDatabase(
+      path,
+      version: 2,
+      onCreate: _createDB,
+      onUpgrade: _onUpgrade,
+    );
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -58,6 +63,7 @@ class DatabaseHelper {
         material_name TEXT NOT NULL,
         part_no TEXT NOT NULL,
         description TEXT DEFAULT '',
+        quantity INTEGER,
         created_at TEXT DEFAULT (datetime('now')),
         updated_at TEXT DEFAULT (datetime('now')),
         FOREIGN KEY (subunit_id) REFERENCES subunits(id) ON DELETE CASCADE
@@ -77,6 +83,13 @@ class DatabaseHelper {
 
     // Insert seed data
     await _insertSeedData(db);
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add quantity column to spare_parts table
+      await db.execute('ALTER TABLE spare_parts ADD COLUMN quantity INTEGER');
+    }
   }
 
   Future<void> _insertSeedData(Database db) async {
@@ -302,9 +315,16 @@ class DatabaseHelper {
   Future<String> insertSpare(Spare spare) async {
     final db = await database;
     final id = spare.id.isEmpty ? _generateId() : spare.id;
+    final now = DateTime.now().toIso8601String();
     await db.insert(
       'spare_parts',
-      spare.copyWith(id: id).toMap(),
+      spare
+          .copyWith(
+            id: id,
+            createdAt: spare.createdAt ?? now,
+            updatedAt: spare.updatedAt ?? now,
+          )
+          .toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
     return id;
@@ -312,9 +332,26 @@ class DatabaseHelper {
 
   Future<int> updateSpare(Spare spare) async {
     final db = await database;
+    // Get existing spare to preserve createdAt if not provided
+    final existingSpares = await db.query(
+      'spare_parts',
+      where: 'id = ?',
+      whereArgs: [spare.id],
+      limit: 1,
+    );
+
+    final existingCreatedAt = existingSpares.isNotEmpty
+        ? existingSpares.first['created_at'] as String?
+        : null;
+
     return await db.update(
       'spare_parts',
-      spare.copyWith(updatedAt: DateTime.now().toIso8601String()).toMap(),
+      spare
+          .copyWith(
+            updatedAt: DateTime.now().toIso8601String(),
+            createdAt: spare.createdAt ?? existingCreatedAt,
+          )
+          .toMap(),
       where: 'id = ?',
       whereArgs: [spare.id],
     );
@@ -350,5 +387,61 @@ class DatabaseHelper {
   Future<String> getDatabasePath() async {
     final dbPath = await getDatabasesPath();
     return join(dbPath, 'spare_management.db');
+  }
+
+  // Statistics methods
+  Future<int> getMachineCount() async {
+    final db = await database;
+    final result = await db.rawQuery('SELECT COUNT(*) as count FROM machines');
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  Future<int> getUnitCount() async {
+    final db = await database;
+    final result = await db.rawQuery('SELECT COUNT(*) as count FROM subunits');
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  Future<int> getSpareCount() async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as count FROM spare_parts',
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  Future<List<Spare>> getLowStockSpares({int threshold = 10}) async {
+    final db = await database;
+    final maps = await db.query(
+      'spare_parts',
+      where: 'quantity IS NOT NULL AND quantity <= ?',
+      whereArgs: [threshold],
+      orderBy: 'quantity ASC, material_name',
+    );
+    return maps.map((map) => Spare.fromMap(map)).toList();
+  }
+
+  Future<List<Spare>> getRecentSpares({int limit = 5}) async {
+    final db = await database;
+    final maps = await db.query(
+      'spare_parts',
+      orderBy: 'updated_at DESC, created_at DESC',
+      limit: limit,
+    );
+    return maps.map((map) => Spare.fromMap(map)).toList();
+  }
+
+  // Get all units across all machines
+  Future<List<Unit>> getAllUnits() async {
+    final db = await database;
+    final maps = await db.query('subunits', orderBy: 'name');
+    return maps.map((map) => Unit.fromMap(map)).toList();
+  }
+
+  // Get all spares across all units
+  Future<List<Spare>> getAllSpares() async {
+    final db = await database;
+    final maps = await db.query('spare_parts', orderBy: 'material_name');
+    return maps.map((map) => Spare.fromMap(map)).toList();
   }
 }

@@ -24,7 +24,7 @@ class SpareDetailsPage extends StatelessWidget {
     try {
       // Try parsing ISO format first
       final date = DateTime.parse(dateString);
-      return DateFormat('MM/dd/yyyy').format(date);
+      return DateFormat('dd-MM-yyyy hh:mm a').format(date);
     } catch (e) {
       // If parsing fails, try SQLite datetime format
       try {
@@ -41,7 +41,7 @@ class SpareDetailsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       appBar: AppBarWidget(
-        title: 'Spare Details',
+        title: spare.materialName,
         action: [
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
@@ -65,48 +65,27 @@ class SpareDetailsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Main Title Card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.black.withOpacity(0.08),
-                    blurRadius: 15,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    spare.materialName,
-                    style: AppTextStyles.bodyText.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 28,
-                      color: AppColors.black,
-                      height: 1.2,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
             // Identification Section
             _buildSection(
               title: 'IDENTIFICATION',
               child: Column(
                 children: [
+                  _buildInfoRow('Material Name', spare.materialName),
+                  const SizedBox(height: 16),
                   _buildInfoRow('Serial Number', spare.serialNo),
                   const SizedBox(height: 16),
                   _buildInfoRow('Material Code', spare.materialCode),
                   const SizedBox(height: 16),
                   _buildInfoRow('Part Number', spare.partNo),
+                  const SizedBox(height: 16),
+                  _buildInfoRow(
+                    'Quantity',
+                    spare.quantity?.toString() ?? 'N/A',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildInfoRow('Created At', _formatDate(spare.createdAt)),
+                  const SizedBox(height: 16),
+                  _buildInfoRow('Updated At', _formatDate(spare.updatedAt)),
                 ],
               ),
             ),
@@ -127,13 +106,6 @@ class SpareDetailsPage extends StatelessWidget {
               ),
             if (spare.description != null && spare.description!.isNotEmpty)
               const SizedBox(height: 20),
-
-            // Record Information Section
-            _buildSection(
-              title: 'RECORD INFORMATION',
-              child: _buildInfoRow('Created', _formatDate(spare.createdAt)),
-            ),
-            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -161,10 +133,9 @@ class SpareDetailsPage extends StatelessWidget {
           Text(
             title,
             style: AppTextStyles.bodyText.copyWith(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.fontgrey,
-              letterSpacing: 1.2,
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: AppColors.primary,
             ),
           ),
           const SizedBox(height: 16),
@@ -183,7 +154,7 @@ class SpareDetailsPage extends StatelessWidget {
           child: Text(
             label,
             style: AppTextStyles.bodyText.copyWith(
-              fontSize: 14,
+              fontSize: 16,
               color: AppColors.fontgrey,
               fontWeight: FontWeight.w500,
             ),
@@ -191,7 +162,7 @@ class SpareDetailsPage extends StatelessWidget {
         ),
         Expanded(
           child: Text(
-            value,
+            ': $value',
             style: AppTextStyles.bodyText.copyWith(
               fontSize: 16,
               color: AppColors.black,

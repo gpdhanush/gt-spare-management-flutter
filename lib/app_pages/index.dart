@@ -1,7 +1,11 @@
 export 'login_page/login_page.dart';
 export 'home_page/home_page.dart';
 export 'splash_screen/splash_screen.dart';
+export 'dashboard_page/dashboard_page.dart';
 export 'machines_page/machines_page.dart';
 export 'units_page/units_page.dart';
 export 'spares_page/spares_page.dart';
 export 'spare_details_page/spare_details_page.dart';
+export 'all_units_page/all_units_page.dart';
+export 'all_spares_page/all_spares_page.dart';
+export 'global_search_page/global_search_page.dart';

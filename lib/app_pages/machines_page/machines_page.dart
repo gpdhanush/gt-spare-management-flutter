@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:spare_management/app_themes/app_colors.dart';
 import 'package:spare_management/app_themes/custom_theme.dart';
 import 'package:spare_management/app_utils/app_bar_widget.dart';
+import 'package:spare_management/app_utils/global_list_tile.dart';
 import 'package:spare_management/models/machine.dart';
 import 'package:spare_management/services/data_service.dart';
-import 'package:spare_management/services/google_drive_service.dart';
-import 'package:spare_management/services/auth_service.dart';
 import 'package:spare_management/app_configs/app_routes.dart';
 
 class MachinesPage extends StatefulWidget {
@@ -216,105 +215,6 @@ class _MachinesPageState extends State<MachinesPage> {
     );
   }
 
-  Future<void> _handleExportDatabase() async {
-    final success = await GoogleDriveService.instance.exportDatabase();
-    if (success && mounted) {
-      _loadMachines(); // Refresh data
-    }
-  }
-
-  Future<void> _handleImportDatabase() async {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Import Database',
-          style: AppTextStyles.bodyText.copyWith(
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-            color: AppColors.black,
-          ),
-        ),
-        content: Text(
-          'This will replace your current database with the one from Google Drive. Are you sure?',
-          style: AppTextStyles.bodyText.copyWith(color: AppColors.fontgrey),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: AppColors.fontgrey)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              final success = await GoogleDriveService.instance
-                  .importDatabase();
-              if (success && mounted) {
-                _loadMachines(); // Refresh data
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            child: const Text('Import', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _handleSignOut() async {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Sign Out',
-          style: AppTextStyles.bodyText.copyWith(
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-            color: AppColors.black,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to sign out?',
-          style: AppTextStyles.bodyText.copyWith(color: AppColors.fontgrey),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: TextStyle(color: AppColors.fontgrey)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await AuthService.instance.signOut();
-              if (mounted) {
-                Navigator.pushReplacementNamed(context, AppRoute.login);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            child: const Text(
-              'Sign Out',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -322,51 +222,6 @@ class _MachinesPageState extends State<MachinesPage> {
       appBar: AppBarWidget(
         title: 'Machines',
         action: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onSelected: (value) {
-              if (value == 'export') {
-                _handleExportDatabase();
-              } else if (value == 'import') {
-                _handleImportDatabase();
-              } else if (value == 'signout') {
-                _handleSignOut();
-              }
-            },
-            itemBuilder: (BuildContext context) => [
-              const PopupMenuItem<String>(
-                value: 'export',
-                child: Row(
-                  children: [
-                    Icon(Icons.upload, color: AppColors.primary),
-                    SizedBox(width: 8),
-                    Text('Export to Google Drive'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'import',
-                child: Row(
-                  children: [
-                    Icon(Icons.download, color: AppColors.primary),
-                    SizedBox(width: 8),
-                    Text('Import from Google Drive'),
-                  ],
-                ),
-              ),
-              const PopupMenuDivider(),
-              const PopupMenuItem<String>(
-                value: 'signout',
-                child: Row(
-                  children: [
-                    Icon(Icons.logout, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text('Sign Out', style: TextStyle(color: Colors.red)),
-                  ],
-                ),
-              ),
-            ],
-          ),
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: CircleAvatar(
@@ -480,7 +335,7 @@ class _MachinesPageState extends State<MachinesPage> {
                     itemBuilder: (context, index) {
                       final machine = _filteredMachines[index];
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 16),
+                        margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
@@ -503,89 +358,168 @@ class _MachinesPageState extends State<MachinesPage> {
                               ).then((_) => _loadMachines());
                             },
                             borderRadius: BorderRadius.circular(16),
-                            child: Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                            child: GlobalListTile(
+                              leadingIcon: Icons.precision_manufacturing,
+                              onTap: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  AppRoute.units,
+                                  arguments: {'machine': machine},
+                                ).then((_) => _loadMachines());
+                              },
+                              title: machine.name,
+                              subtitle: machine.description ?? '',
+                              trailing: PopupMenuButton<String>(
+                                icon: Icon(
+                                  Icons.more_vert_outlined,
+                                  color: AppColors.fontgrey,
+                                ),
+                                onSelected: (value) {
+                                  if (value == 'view') {
+                                    Navigator.pushNamed(
+                                      context,
+                                      AppRoute.units,
+                                      arguments: {'machine': machine},
+                                    ).then((_) => _loadMachines());
+                                  } else if (value == 'edit') {
+                                    _showAddEditMachineDialog(machine: machine);
+                                  } else if (value == 'delete') {
+                                    _showDeleteConfirmation(machine);
+                                  }
+                                },
+                                itemBuilder: (BuildContext context) => [
+                                  const PopupMenuItem<String>(
+                                    value: 'view',
+                                    child: Row(
                                       children: [
-                                        Text(
-                                          machine.name,
-                                          style: AppTextStyles.bodyText
-                                              .copyWith(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 20,
-                                                color: AppColors.black,
-                                              ),
+                                        Icon(
+                                          Icons.visibility_outlined,
+                                          color: AppColors.primary,
                                         ),
-                                        if (machine.description != null &&
-                                            machine
-                                                .description!
-                                                .isNotEmpty) ...[
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            machine.description!,
-                                            style: AppTextStyles.bodyText
-                                                .copyWith(
-                                                  color: AppColors.fontgrey,
-                                                  fontSize: 14,
-                                                ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
+                                        SizedBox(width: 8),
+                                        Text('View'),
                                       ],
                                     ),
                                   ),
-                                  Column(
-                                    children: [
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primary.withOpacity(
-                                            0.1,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
+                                  const PopupMenuItem<String>(
+                                    value: 'edit',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.edit_outlined,
+                                          color: AppColors.primary,
                                         ),
-                                        child: IconButton(
-                                          icon: Icon(
-                                            Icons.edit,
-                                            color: AppColors.primary,
-                                            size: 20,
-                                          ),
-                                          onPressed: () =>
-                                              _showAddEditMachineDialog(
-                                                machine: machine,
-                                              ),
+                                        SizedBox(width: 8),
+                                        Text('Edit'),
+                                      ],
+                                    ),
+                                  ),
+                                  const PopupMenuItem<String>(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.delete_outline,
+                                          color: Colors.red,
                                         ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.red.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Delete',
+                                          style: TextStyle(color: Colors.red),
                                         ),
-                                        child: IconButton(
-                                          icon: const Icon(
-                                            Icons.delete,
-                                            color: Colors.red,
-                                            size: 20,
-                                          ),
-                                          onPressed: () =>
-                                              _showDeleteConfirmation(machine),
-                                        ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
+
+                            // child: Padding(
+                            //   padding: const EdgeInsets.symmetric(
+                            //     horizontal: 16,
+                            //     vertical: 5,
+                            //   ),
+                            //   child: Row(
+                            //     children: [
+                            //       Expanded(
+                            //         child: Column(
+                            //           crossAxisAlignment:
+                            //               CrossAxisAlignment.start,
+                            //           children: [
+                            //             Text(
+                            //               machine.name,
+                            //               style: AppTextStyles.bodyText
+                            //                   .copyWith(
+                            //                     fontWeight: FontWeight.bold,
+                            //                     fontSize: 18,
+                            //                     color: AppColors.black,
+                            //                   ),
+                            //             ),
+                            //             if (machine.description != null &&
+                            //                 machine
+                            //                     .description!
+                            //                     .isNotEmpty) ...[
+                            //               const SizedBox(height: 8),
+                            //               Text(
+                            //                 machine.description!,
+                            //                 style: AppTextStyles.bodyText
+                            //                     .copyWith(
+                            //                       color: AppColors.fontgrey,
+                            //                       fontSize: 14,
+                            //                     ),
+                            //                 maxLines: 2,
+                            //                 overflow: TextOverflow.ellipsis,
+                            //               ),
+                            //             ],
+                            //           ],
+                            //         ),
+                            //       ),
+                            //       Column(
+                            //         children: [
+                            //           Container(
+                            //             decoration: BoxDecoration(
+                            //               color: AppColors.primary.withOpacity(
+                            //                 0.1,
+                            //               ),
+                            //               borderRadius: BorderRadius.circular(
+                            //                 8,
+                            //               ),
+                            //             ),
+                            //             child: IconButton(
+                            //               icon: Icon(
+                            //                 Icons.edit,
+                            //                 color: AppColors.primary,
+                            //                 size: 20,
+                            //               ),
+                            //               onPressed: () =>
+                            //                   _showAddEditMachineDialog(
+                            //                     machine: machine,
+                            //                   ),
+                            //             ),
+                            //           ),
+                            //           const SizedBox(height: 8),
+                            //           Container(
+                            //             decoration: BoxDecoration(
+                            //               color: Colors.red.withOpacity(0.1),
+                            //               borderRadius: BorderRadius.circular(
+                            //                 8,
+                            //               ),
+                            //             ),
+                            //             child: IconButton(
+                            //               icon: const Icon(
+                            //                 Icons.delete,
+                            //                 color: Colors.red,
+                            //                 size: 20,
+                            //               ),
+                            //               onPressed: () =>
+                            //                   _showDeleteConfirmation(machine),
+                            //             ),
+                            //           ),
+                            //         ],
+                            //       ),
+                            //     ],
+                            //   ),
+                            // ),
                           ),
                         ),
                       );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:spare_management/app_themes/app_colors.dart';
 import 'package:spare_management/app_themes/custom_theme.dart';
 import 'package:spare_management/app_utils/app_bar_widget.dart';
+import 'package:spare_management/app_utils/global_list_tile.dart';
 import 'package:spare_management/models/machine.dart';
 import 'package:spare_management/models/unit.dart';
 import 'package:spare_management/services/data_service.dart';
@@ -252,46 +253,6 @@ class _UnitsPageState extends State<UnitsPage> {
       ),
       body: Column(
         children: [
-          // Breadcrumb
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.primary.withOpacity(0.15),
-                  AppColors.primary.withOpacity(0.08),
-                ],
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    Icons.computer,
-                    color: AppColors.primary,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '${widget.machine.name} / Sub-Units',
-                  style: AppTextStyles.bodyText.copyWith(
-                    color: AppColors.primary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
           // Search Bar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -386,7 +347,7 @@ class _UnitsPageState extends State<UnitsPage> {
                     itemBuilder: (context, index) {
                       final unit = _filteredUnits[index];
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 16),
+                        margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
@@ -400,94 +361,73 @@ class _UnitsPageState extends State<UnitsPage> {
                         child: Material(
                           color: AppColors.white,
                           borderRadius: BorderRadius.circular(16),
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        unit.name,
-                                        style: AppTextStyles.bodyText.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 20,
-                                          color: AppColors.black,
+                          child: InkWell(
+                            onTap: () => _navigateToSpares(unit),
+                            borderRadius: BorderRadius.circular(16),
+                            child: GlobalListTile(
+                              leadingIcon: Icons.meeting_room_outlined,
+                              onTap: () => _navigateToSpares(unit),
+                              title: unit.name,
+                              subtitle: unit.description ?? '',
+                              trailing: PopupMenuButton<String>(
+                                icon: Icon(
+                                  Icons.more_vert_outlined,
+                                  color: AppColors.fontgrey,
+                                ),
+                                onSelected: (value) {
+                                  if (value == 'view') {
+                                    _navigateToSpares(unit);
+                                  } else if (value == 'edit') {
+                                    _showAddEditUnitDialog(unit: unit);
+                                  } else if (value == 'delete') {
+                                    _showDeleteConfirmation(unit);
+                                  }
+                                },
+                                itemBuilder: (BuildContext context) => [
+                                  const PopupMenuItem<String>(
+                                    value: 'view',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.visibility_outlined,
+                                          color: AppColors.primary,
                                         ),
-                                      ),
-                                      if (unit.description != null &&
-                                          unit.description!.isNotEmpty) ...[
-                                        const SizedBox(height: 8),
+                                        SizedBox(width: 8),
+                                        Text('View'),
+                                      ],
+                                    ),
+                                  ),
+                                  const PopupMenuItem<String>(
+                                    value: 'edit',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.edit_outlined,
+                                          color: AppColors.primary,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text('Edit'),
+                                      ],
+                                    ),
+                                  ),
+                                  const PopupMenuItem<String>(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.delete_outline,
+                                          color: Colors.red,
+                                        ),
+                                        SizedBox(width: 8),
                                         Text(
-                                          unit.description!,
-                                          style: AppTextStyles.bodyText
-                                              .copyWith(
-                                                color: AppColors.fontgrey,
-                                                fontSize: 14,
-                                              ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
+                                          'Delete',
+                                          style: TextStyle(color: Colors.red),
                                         ),
                                       ],
-                                      const SizedBox(height: 10),
-                                      GestureDetector(
-                                        onTap: () => _navigateToSpares(unit),
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 6,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primary
-                                                .withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                'View Spares',
-                                                style: AppTextStyles.bodyText
-                                                    .copyWith(
-                                                      color: AppColors.primary,
-                                                      fontSize: 14,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Icon(
-                                                Icons.arrow_forward_ios,
-                                                color: AppColors.primary,
-                                                size: 12,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.red.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: IconButton(
-                                    icon: const Icon(
-                                      Icons.delete,
-                                      color: Colors.red,
-                                      size: 20,
                                     ),
-                                    onPressed: () =>
-                                        _showDeleteConfirmation(unit),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),

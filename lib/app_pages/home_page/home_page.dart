@@ -12,9 +12,9 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    // Navigate to machines page when home page loads
+    // Navigate to dashboard when home page loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Navigator.pushReplacementNamed(context, AppRoute.machines);
+      Navigator.pushReplacementNamed(context, AppRoute.dashboard);
     });
   }
 

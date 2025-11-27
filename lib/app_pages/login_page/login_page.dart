@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:spare_management/app_configs/app_constants.dart';
 import 'package:spare_management/app_configs/app_routes.dart';
 import 'package:spare_management/app_themes/app_colors.dart';
-import 'package:spare_management/services/auth_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -111,10 +110,11 @@ class _LoginPageState extends State<LoginPage> {
                           },
                         ),
                   label: Text(
-                    _isLoading ? 'Signing in...' : 'Sign in with Google',
+                    _isLoading ? 'Signing in...' : 'Sign in',
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
+                      color: AppColors.text,
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -129,14 +129,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Text(
-                  'By signing in, you agree to sync your data with Google Drive',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.text.withOpacity(0.5),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
               ],
             ),
           ),

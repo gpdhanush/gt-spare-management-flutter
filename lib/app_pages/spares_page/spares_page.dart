@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:spare_management/app_themes/app_colors.dart';
 import 'package:spare_management/app_themes/custom_theme.dart';
 import 'package:spare_management/app_utils/app_bar_widget.dart';
+import 'package:spare_management/app_utils/global_list_tile.dart';
 import 'package:spare_management/models/machine.dart';
 import 'package:spare_management/models/unit.dart';
 import 'package:spare_management/models/spare.dart';
@@ -87,6 +88,9 @@ class _SparesPageState extends State<SparesPage> {
     final descriptionController = TextEditingController(
       text: spare?.description ?? '',
     );
+    final quantityController = TextEditingController(
+      text: spare?.quantity?.toString() ?? '',
+    );
 
     showDialog(
       context: context,
@@ -169,6 +173,23 @@ class _SparesPageState extends State<SparesPage> {
               ),
               const SizedBox(height: 16),
               TextField(
+                controller: quantityController,
+                decoration: InputDecoration(
+                  labelText: 'Quantity',
+                  labelStyle: TextStyle(color: AppColors.fontgrey),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.primary, width: 2),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: AppColors.grayDark),
+                  ),
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 16),
+              TextField(
                 controller: descriptionController,
                 decoration: InputDecoration(
                   labelText: 'Description',
@@ -198,6 +219,10 @@ class _SparesPageState extends State<SparesPage> {
                   materialCodeController.text.isNotEmpty &&
                   materialNameController.text.isNotEmpty &&
                   partNoController.text.isNotEmpty) {
+                final quantity = quantityController.text.trim().isEmpty
+                    ? null
+                    : int.tryParse(quantityController.text.trim());
+
                 if (spare == null) {
                   final newSpare = Spare(
                     id: '',
@@ -209,6 +234,7 @@ class _SparesPageState extends State<SparesPage> {
                     description: descriptionController.text.trim().isEmpty
                         ? null
                         : descriptionController.text.trim(),
+                    quantity: quantity,
                   );
                   await _dataService.addSpare(newSpare);
                 } else {
@@ -220,6 +246,7 @@ class _SparesPageState extends State<SparesPage> {
                     description: descriptionController.text.trim().isEmpty
                         ? null
                         : descriptionController.text.trim(),
+                    quantity: quantity,
                   );
                   await _dataService.updateSpare(updatedSpare);
                 }
@@ -315,42 +342,6 @@ class _SparesPageState extends State<SparesPage> {
       ),
       body: Column(
         children: [
-          // Breadcrumb
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.primary.withOpacity(0.15),
-                  AppColors.primary.withOpacity(0.08),
-                ],
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.layers, color: AppColors.primary, size: 20),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '${widget.unit.name} / Spares',
-                  style: AppTextStyles.bodyText.copyWith(
-                    color: AppColors.primary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
           // Search Bar
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -444,8 +435,22 @@ class _SparesPageState extends State<SparesPage> {
                     itemCount: _filteredSpares.length,
                     itemBuilder: (context, index) {
                       final spare = _filteredSpares[index];
+                      final subtitleParts = <String>[
+                        'SN: ${spare.serialNo}',
+                        'Code: ${spare.materialCode}',
+                        'Part: ${spare.partNo}',
+                      ];
+                      if (spare.quantity != null) {
+                        subtitleParts.add('Qty: ${spare.quantity}');
+                      }
+                      if (spare.description != null &&
+                          spare.description!.isNotEmpty) {
+                        subtitleParts.add(spare.description!);
+                      }
+                      final subtitle = subtitleParts.join(' • ');
+
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 16),
+                        margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
@@ -472,129 +477,84 @@ class _SparesPageState extends State<SparesPage> {
                               );
                             },
                             borderRadius: BorderRadius.circular(16),
-                            child: Padding(
-                              padding: const EdgeInsets.all(20),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                            child: GlobalListTile(
+                              leadingIcon: Icons.build_outlined,
+                              onTap: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  AppRoute.spareDetails,
+                                  arguments: {
+                                    'spare': spare,
+                                    'unit': widget.unit,
+                                    'machine': widget.machine,
+                                  },
+                                );
+                              },
+                              title: spare.materialName,
+                              subtitle: subtitle,
+                              trailing: PopupMenuButton<String>(
+                                icon: Icon(
+                                  Icons.more_vert_outlined,
+                                  color: AppColors.fontgrey,
+                                ),
+                                onSelected: (value) {
+                                  if (value == 'view') {
+                                    Navigator.pushNamed(
+                                      context,
+                                      AppRoute.spareDetails,
+                                      arguments: {
+                                        'spare': spare,
+                                        'unit': widget.unit,
+                                        'machine': widget.machine,
+                                      },
+                                    );
+                                  } else if (value == 'edit') {
+                                    _showAddEditSpareDialog(spare: spare);
+                                  } else if (value == 'delete') {
+                                    _showDeleteConfirmation(spare);
+                                  }
+                                },
+                                itemBuilder: (BuildContext context) => [
+                                  const PopupMenuItem<String>(
+                                    value: 'view',
+                                    child: Row(
                                       children: [
-                                        Text(
-                                          spare.materialName,
-                                          style: AppTextStyles.bodyText
-                                              .copyWith(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 20,
-                                                color: AppColors.black,
-                                              ),
+                                        Icon(
+                                          Icons.visibility_outlined,
+                                          color: AppColors.primary,
                                         ),
-                                        const SizedBox(height: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 10,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primary
-                                                .withOpacity(0.1),
-                                            borderRadius: BorderRadius.circular(
-                                              6,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            'SN: ${spare.serialNo}',
-                                            style: AppTextStyles.bodyText
-                                                .copyWith(
-                                                  color: AppColors.primary,
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 10,
-                                                      vertical: 6,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color: AppColors.gray,
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                ),
-                                                child: Text(
-                                                  'Code: ${spare.materialCode}',
-                                                  style: AppTextStyles.bodyText
-                                                      .copyWith(
-                                                        color:
-                                                            AppColors.fontgrey,
-                                                        fontSize: 13,
-                                                      ),
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 10,
-                                                      vertical: 6,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color: AppColors.gray,
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                ),
-                                                child: Text(
-                                                  'Part: ${spare.partNo}',
-                                                  style: AppTextStyles.bodyText
-                                                      .copyWith(
-                                                        color:
-                                                            AppColors.fontgrey,
-                                                        fontSize: 13,
-                                                      ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        if (spare.description != null &&
-                                            spare.description!.isNotEmpty) ...[
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            spare.description!,
-                                            style: AppTextStyles.bodyText
-                                                .copyWith(
-                                                  color: AppColors.fontgrey,
-                                                  fontSize: 14,
-                                                  fontStyle: FontStyle.italic,
-                                                ),
-                                          ),
-                                        ],
+                                        SizedBox(width: 8),
+                                        Text('View'),
                                       ],
                                     ),
                                   ),
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
+                                  const PopupMenuItem<String>(
+                                    value: 'edit',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.edit_outlined,
+                                          color: AppColors.primary,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text('Edit'),
+                                      ],
                                     ),
-                                    child: IconButton(
-                                      icon: const Icon(
-                                        Icons.delete,
-                                        color: Colors.red,
-                                        size: 20,
-                                      ),
-                                      onPressed: () =>
-                                          _showDeleteConfirmation(spare),
+                                  ),
+                                  const PopupMenuItem<String>(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.delete_outline,
+                                          color: Colors.red,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Delete',
+                                          style: TextStyle(color: Colors.red),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
